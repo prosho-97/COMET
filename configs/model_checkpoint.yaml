@@ -1,15 +1,15 @@
 class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
 init_args:
-  dirpath: null
-  filename: '{epoch}-{step}-{val_kendall:.3f}'
-  monitor: val_kendall
+  dirpath: /leonardo_work/IscrC_MTMIT/lorenzo/mt_metrics_models/diff_comet
+  filename: '{epoch}-{step}-{val_kendall_correlation:.5f}'
+  monitor: val_kendall_correlation
   verbose: True
-  save_last: False
-  save_top_k: 2
+  save_last: True
+  save_top_k: 3
   mode: max
   auto_insert_metric_name: True
   save_weights_only: True
   every_n_train_steps: null
   train_time_interval: null
   every_n_epochs: 1
-  save_on_train_epoch_end: null
+  save_on_train_epoch_end: True

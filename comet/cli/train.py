@@ -36,7 +36,8 @@ import torch
 from jsonargparse import ActionConfigFile, ArgumentParser, namespace_to_dict
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import (EarlyStopping, LearningRateMonitor,
-                                         ModelCheckpoint)
+                                         ModelCheckpoint, RichProgressBar)
+from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
 from comet.models import (RankingMetric, ReferencelessRegression,
@@ -64,6 +65,8 @@ def read_arguments() -> ArgumentParser:
     parser.add_subclass_arguments(UnifiedMetric, "unified_metric")
     parser.add_subclass_arguments(EarlyStopping, "early_stopping")
     parser.add_subclass_arguments(ModelCheckpoint, "model_checkpoint")
+    parser.add_subclass_arguments(WandbLogger, "wandb_logger")
+    parser.add_argument("--wandb-logger-entity", type=str, help="Wandb entity name.")
     parser.add_subclass_arguments(Trainer, "trainer")
     parser.add_argument(
         "--load_from_checkpoint",
@@ -85,9 +88,14 @@ def initialize_trainer(configs) -> Trainer:
     early_stop_callback = EarlyStopping(
         **namespace_to_dict(configs.early_stopping.init_args)
     )
+    wandb_logger_args = namespace_to_dict(configs.wandb_logger.init_args)
+    wandb_logger_args["entity"] = configs.wandb_logger_entity
+    wandb_logger = WandbLogger(**wandb_logger_args)
     trainer_args = namespace_to_dict(configs.trainer.init_args)
+    rich_progress_bar_callback = RichProgressBar()
     lr_monitor = LearningRateMonitor(logging_interval="step")
-    trainer_args["callbacks"] = [early_stop_callback, checkpoint_callback, lr_monitor]
+    trainer_args["callbacks"] = [rich_progress_bar_callback, early_stop_callback, checkpoint_callback, lr_monitor]
+    trainer_args["logger"] = wandb_logger
     print("TRAINER ARGUMENTS: ")
     print(json.dumps(trainer_args, indent=4, default=lambda x: x.__dict__))
     trainer = Trainer(**trainer_args)
